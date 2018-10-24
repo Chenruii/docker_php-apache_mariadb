@@ -1,0 +1,55 @@
+versions: "3"
+services: 
+  db:
+    image: mysql:5.6
+    restart: always
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: mariadb
+      MYSQL_DATABASE: mariadb
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
+    volumes:
+      - ${PWD}/mariadb:/var/lib/mysql
+      - ./docker/mysql/conf-mysql.cnf:/etc/mysql/mysql.conf.d/conf-mysql.cnf:ro
+    expose: 
+      - 3306
+
+  php-apache: 
+    image: php
+    container_name: php7.2-apache
+    depends_on: 
+      - mariadb
+    ports: 
+      - "30000:80"
+    restart: always
+    volumes:
+      - ./web:/var/www/html:rw,delegated
+
+    command: ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+
+    environment:
+    - APACHE_RUN_USER=admin_apache
+    - APACHE_RUN_GROUP=www-data
+    - APACHE_LOG_DIR=/var/log/apache2/
+
+
+  httpd:
+    image: httpd
+    restart: always
+    ports: 
+      - 30000
+    volumes: 
+      - ./docker/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./docker/apache/vhosts/:/usr/local/apache2/conf/vhosts
+
+    volumes_from:
+      - php
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 50000:8080
+
+
+
